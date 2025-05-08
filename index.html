@@ -2,105 +2,26 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Jerarquización de Espacios</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
-    h2 { color: #333; }
-    .form-section { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
-    label { display: block; margin-top: 10px; }
-    input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
-    button { margin-top: 15px; padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
-    .hidden { display: none; }
-  </style>
+  <title>Jerarquización de espacios</title>
 </head>
 <body>
-  <h2>Jerarquización de Espacios: Proyecto / Lote</h2>
+  <h2>Jerarquización de espacios</h2>
 
-  <div class="form-section" id="formulario">
-    <label for="nombreProyecto">Nombre del Proyecto o Lote</label>
-    <input type="text" id="nombreProyecto">
-
-    <div id="lotesContainer"></div>
-
-    <button onclick="agregarLote()">+ Agregar Lote</button>
-    <button onclick="guardarDatos()">Guardar</button>
+  <div id="lotesContainer">
+    <!-- Aquí va tu estructura jerárquica de formulario -->
+    <!-- Debes tener campos con los name="loteNombre", "torreNombre", etc. como ya los tenías -->
   </div>
 
+  <button onclick="guardarDatos()">Guardar como CSV</button>
+
   <script>
-    let loteIndex = 0;
-
-    // Función para agregar un lote
-    function agregarLote() {
-      const container = document.getElementById('lotesContainer');
-      const loteDiv = document.createElement('div');
-      loteDiv.className = 'form-section';
-      loteDiv.innerHTML = `
-        <h4>Lote</h4>
-        <label>Nombre del Lote</label>
-        <input type="text" name="loteNombre${loteIndex}">
-        <div class="torresContainer"></div>
-        <button type="button" onclick="agregarTorre(this)">+ Agregar Torre</button>
-      `;
-      container.appendChild(loteDiv);
-      loteIndex++;
-    }
-
-    // Función para agregar una torre dentro de un lote
-    function agregarTorre(btn) {
-      const lotesContainer = btn.closest('.form-section');
-      const torresContainer = lotesContainer.querySelector('.torresContainer');
-      const torreDiv = document.createElement('div');
-      torreDiv.className = 'form-section';
-      torreDiv.innerHTML = `
-        <h5>Torre</h5>
-        <label>Nombre de la Torre</label>
-        <input type="text" name="torreNombre">
-        <div class="pisosContainer"></div>
-        <button type="button" onclick="agregarPiso(this)">+ Agregar Piso</button>
-      `;
-      torresContainer.appendChild(torreDiv);
-    }
-
-    // Función para agregar un piso dentro de una torre
-    function agregarPiso(btn) {
-      const pisosContainer = btn.previousElementSibling;
-      const pisoDiv = document.createElement('div');
-      pisoDiv.className = 'form-section';
-      pisoDiv.innerHTML = `
-        <h6>Piso</h6>
-        <label>Nombre del Piso</label>
-        <input type="text" name="pisoNombre">
-        <div class="areasContainer"></div>
-        <button type="button" onclick="agregarArea(this)">+ Agregar Área o Cuarto</button>
-      `;
-      pisosContainer.appendChild(pisoDiv);
-    }
-
-    // Función para agregar un área dentro de un piso
-    function agregarArea(btn) {
-      const areasContainer = btn.previousElementSibling;
-      const areaDiv = document.createElement('div');
-      areaDiv.className = 'form-section';
-      areaDiv.innerHTML = `
-        <label>Nombre del Área o Cuarto</label>
-        <input type="text" name="area">
-        <label>Observaciones</label>
-        <textarea name="observaciones"></textarea>
-      `;
-      areasContainer.appendChild(areaDiv);
-    }
-
-    // Función para guardar los datos y enviarlos
     function guardarDatos() {
-      const proyecto = document.getElementById('nombreProyecto').value;
       const lotes = [];
 
       document.querySelectorAll('#lotesContainer > .form-section').forEach(loteDiv => {
-        const loteNombre = loteDiv.querySelector('input[name^="loteNombre"]').value;
+        const loteNombre = loteDiv.querySelector('input[name="loteNombre"]').value;
         const torres = [];
-        
+
         loteDiv.querySelectorAll('.torresContainer > .form-section').forEach(torreDiv => {
           const torreNombre = torreDiv.querySelector('input[name="torreNombre"]').value;
           const pisos = [];
@@ -110,10 +31,9 @@
             const areas = [];
 
             pisoDiv.querySelectorAll('.areasContainer > .form-section').forEach(areaDiv => {
-              areas.push({
-                area: areaDiv.querySelector('input[name="area"]').value,
-                observaciones: areaDiv.querySelector('textarea[name="observaciones"]').value
-              });
+              const areaNombre = areaDiv.querySelector('input[name="area"]').value;
+              const observaciones = areaDiv.querySelector('textarea[name="observaciones"]').value;
+              areas.push({ area: areaNombre, observaciones });
             });
 
             pisos.push({ piso: pisoNombre, areas });
@@ -125,12 +45,28 @@
         lotes.push({ lote: loteNombre, torres });
       });
 
-      const data = { lotes };
+      // Convertir a CSV
+      let csvContent = "Lote,Torre,Piso,Área,Observaciones\n";
 
-      // Enviar los datos al Google Sheets o backend correspondiente
-      axios.post('https://script.google.com/macros/s/AKfycby29xfFjLy8rO0tzZz2vFJOrzSkCPy7ZVLl87Lr6BSengZ_7v6Usn0eeNQ-6Lg4Z-8RTg/exec', data)
-        .then(res => alert('Datos enviados con éxito'))
-        .catch(err => alert('Error al enviar datos'));
+      lotes.forEach(lote => {
+        lote.torres.forEach(torre => {
+          torre.pisos.forEach(piso => {
+            piso.areas.forEach(area => {
+              csvContent += `"${lote.lote}","${torre.torre}","${piso.piso}","${area.area}","${area.observaciones}"\n`;
+            });
+          });
+        });
+      });
+
+      // Descargar CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "jerarquizacion_espacios.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   </script>
 </body>
