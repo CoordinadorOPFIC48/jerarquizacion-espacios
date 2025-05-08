@@ -12,45 +12,64 @@
     label { display: block; margin-top: 10px; }
     input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
     button { margin-top: 15px; padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    .hidden { display: none; }
   </style>
 </head>
 <body>
-  <h2>Jerarquización de Espacios: Lote o Proyecto</h2>
+  <h2>Jerarquización de Espacios: Proyecto / Lote</h2>
 
   <div class="form-section" id="formulario">
-    <label for="nombreLote">Nombre del Proyecto o Lote</label>
-    <input type="text" id="nombreLote">
+    <label for="nombreProyecto">Nombre del Proyecto o Lote</label>
+    <input type="text" id="nombreProyecto">
 
-    <div id="torresContainer"></div>
+    <div id="lotesContainer"></div>
 
-    <button onclick="agregarTorre()">+ Agregar Torre</button>
+    <button onclick="agregarLote()">+ Agregar Lote</button>
     <button onclick="guardarDatos()">Guardar</button>
   </div>
 
   <script>
-    let torreIndex = 0;
+    let loteIndex = 0;
 
-    function agregarTorre() {
-      const container = document.getElementById('torresContainer');
+    // Función para agregar un lote
+    function agregarLote() {
+      const container = document.getElementById('lotesContainer');
+      const loteDiv = document.createElement('div');
+      loteDiv.className = 'form-section';
+      loteDiv.innerHTML = `
+        <h4>Lote</h4>
+        <label>Nombre del Lote</label>
+        <input type="text" name="loteNombre${loteIndex}">
+        <div class="torresContainer"></div>
+        <button type="button" onclick="agregarTorre(this)">+ Agregar Torre</button>
+      `;
+      container.appendChild(loteDiv);
+      loteIndex++;
+    }
+
+    // Función para agregar una torre dentro de un lote
+    function agregarTorre(btn) {
+      const lotesContainer = btn.closest('.form-section');
+      const torresContainer = lotesContainer.querySelector('.torresContainer');
       const torreDiv = document.createElement('div');
       torreDiv.className = 'form-section';
       torreDiv.innerHTML = `
-        <h4>Torre</h4>
+        <h5>Torre</h5>
         <label>Nombre de la Torre</label>
-        <input type="text" name="torreNombre${torreIndex}">
+        <input type="text" name="torreNombre">
         <div class="pisosContainer"></div>
         <button type="button" onclick="agregarPiso(this)">+ Agregar Piso</button>
       `;
-      container.appendChild(torreDiv);
-      torreIndex++;
+      torresContainer.appendChild(torreDiv);
     }
 
+    // Función para agregar un piso dentro de una torre
     function agregarPiso(btn) {
       const pisosContainer = btn.previousElementSibling;
       const pisoDiv = document.createElement('div');
       pisoDiv.className = 'form-section';
       pisoDiv.innerHTML = `
-        <h5>Piso</h5>
+        <h6>Piso</h6>
         <label>Nombre del Piso</label>
         <input type="text" name="pisoNombre">
         <div class="areasContainer"></div>
@@ -59,6 +78,7 @@
       pisosContainer.appendChild(pisoDiv);
     }
 
+    // Función para agregar un área dentro de un piso
     function agregarArea(btn) {
       const areasContainer = btn.previousElementSibling;
       const areaDiv = document.createElement('div');
@@ -72,35 +92,47 @@
       areasContainer.appendChild(areaDiv);
     }
 
+    // Función para guardar los datos y enviarlos
     function guardarDatos() {
-      const lote = document.getElementById('nombreLote').value;
-      const torres = [];
+      const proyecto = document.getElementById('nombreProyecto').value;
+      const lotes = [];
 
-      document.querySelectorAll('#torresContainer > .form-section').forEach(torreDiv => {
-        const torreNombre = torreDiv.querySelector('input[name^="torreNombre"]').value;
-        const pisos = [];
-        torreDiv.querySelectorAll('.pisosContainer > .form-section').forEach(pisoDiv => {
-          const pisoNombre = pisoDiv.querySelector('input[name="pisoNombre"]').value;
-          const areas = [];
-          pisoDiv.querySelectorAll('.areasContainer > .form-section').forEach(areaDiv => {
-            areas.push({
-              area: areaDiv.querySelector('input[name="area"]').value,
-              observaciones: areaDiv.querySelector('textarea[name="observaciones"]').value
+      document.querySelectorAll('#lotesContainer > .form-section').forEach(loteDiv => {
+        const loteNombre = loteDiv.querySelector('input[name^="loteNombre"]').value;
+        const torres = [];
+        
+        loteDiv.querySelectorAll('.torresContainer > .form-section').forEach(torreDiv => {
+          const torreNombre = torreDiv.querySelector('input[name="torreNombre"]').value;
+          const pisos = [];
+
+          torreDiv.querySelectorAll('.pisosContainer > .form-section').forEach(pisoDiv => {
+            const pisoNombre = pisoDiv.querySelector('input[name="pisoNombre"]').value;
+            const areas = [];
+
+            pisoDiv.querySelectorAll('.areasContainer > .form-section').forEach(areaDiv => {
+              areas.push({
+                area: areaDiv.querySelector('input[name="area"]').value,
+                observaciones: areaDiv.querySelector('textarea[name="observaciones"]').value
+              });
             });
+
+            pisos.push({ piso: pisoNombre, areas });
           });
-          pisos.push({ piso: pisoNombre, areas });
+
+          torres.push({ torre: torreNombre, pisos });
         });
-        torres.push({ torre: torreNombre, pisos });
+
+        lotes.push({ lote: loteNombre, torres });
       });
 
-      const data = { lotes: [{ lote, torres }] };
+      const data = { lotes };
 
-      // Enviar datos a Google Sheets
-      const webAppUrl = https://script.google.com/macros/s/AKfycby29xfFjLy8rO0tzZz2vFJOrzSkCPy7ZVLl87Lr6BSengZ_7v6Usn0eeNQ-6Lg4Z-8RTg/exec;  // Reemplaza con la URL de tu Web App
-      axios.post(webAppUrl, data)
+      // Enviar los datos al Google Sheets o backend correspondiente
+      axios.post('https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec', data)
         .then(res => alert('Datos enviados con éxito'))
         .catch(err => alert('Error al enviar datos'));
     }
   </script>
 </body>
 </html>
+
