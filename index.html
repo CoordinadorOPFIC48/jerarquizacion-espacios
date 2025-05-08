@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jerarquización de Espacios</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.4.0/axios.min.js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f4f4f4; }
+    h2 { color: #333; }
+    .form-section { background: #fff; padding: 15px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.1); margin-bottom: 20px; }
+    label { display: block; margin-top: 10px; }
+    input, select, textarea { width: 100%; padding: 8px; margin-top: 5px; border-radius: 4px; border: 1px solid #ccc; }
+    button { margin-top: 15px; padding: 10px 15px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h2>Jerarquización de Espacios: Lote o Proyecto</h2>
+
+  <div class="form-section" id="formulario">
+    <label for="nombreLote">Nombre del Proyecto o Lote</label>
+    <input type="text" id="nombreLote">
+
+    <div id="torresContainer"></div>
+
+    <button onclick="agregarTorre()">+ Agregar Torre</button>
+    <button onclick="guardarDatos()">Guardar</button>
+  </div>
+
+  <script>
+    let torreIndex = 0;
+
+    function agregarTorre() {
+      const container = document.getElementById('torresContainer');
+      const torreDiv = document.createElement('div');
+      torreDiv.className = 'form-section';
+      torreDiv.innerHTML = `
+        <h4>Torre</h4>
+        <label>Nombre de la Torre</label>
+        <input type="text" name="torreNombre${torreIndex}">
+        <div class="pisosContainer"></div>
+        <button type="button" onclick="agregarPiso(this)">+ Agregar Piso</button>
+      `;
+      container.appendChild(torreDiv);
+      torreIndex++;
+    }
+
+    function agregarPiso(btn) {
+      const pisosContainer = btn.previousElementSibling;
+      const pisoDiv = document.createElement('div');
+      pisoDiv.className = 'form-section';
+      pisoDiv.innerHTML = `
+        <h5>Piso</h5>
+        <label>Nombre del Piso</label>
+        <input type="text" name="pisoNombre">
+        <div class="areasContainer"></div>
+        <button type="button" onclick="agregarArea(this)">+ Agregar Área o Cuarto</button>
+      `;
+      pisosContainer.appendChild(pisoDiv);
+    }
+
+    function agregarArea(btn) {
+      const areasContainer = btn.previousElementSibling;
+      const areaDiv = document.createElement('div');
+      areaDiv.className = 'form-section';
+      areaDiv.innerHTML = `
+        <label>Nombre del Área o Cuarto</label>
+        <input type="text" name="area">
+        <label>Observaciones</label>
+        <textarea name="observaciones"></textarea>
+      `;
+      areasContainer.appendChild(areaDiv);
+    }
+
+    function guardarDatos() {
+      const lote = document.getElementById('nombreLote').value;
+      const torres = [];
+
+      document.querySelectorAll('#torresContainer > .form-section').forEach(torreDiv => {
+        const torreNombre = torreDiv.querySelector('input[name^="torreNombre"]').value;
+        const pisos = [];
+        torreDiv.querySelectorAll('.pisosContainer > .form-section').forEach(pisoDiv => {
+          const pisoNombre = pisoDiv.querySelector('input[name="pisoNombre"]').value;
+          const areas = [];
+          pisoDiv.querySelectorAll('.areasContainer > .form-section').forEach(areaDiv => {
+            areas.push({
+              area: areaDiv.querySelector('input[name="area"]').value,
+              observaciones: areaDiv.querySelector('textarea[name="observaciones"]').value
+            });
+          });
+          pisos.push({ piso: pisoNombre, areas });
+        });
+        torres.push({ torre: torreNombre, pisos });
+      });
+
+      const data = { lotes: [{ lote, torres }] };
+
+      // Enviar datos a Google Sheets
+      const webAppUrl = https://script.google.com/macros/s/AKfycby29xfFjLy8rO0tzZz2vFJOrzSkCPy7ZVLl87Lr6BSengZ_7v6Usn0eeNQ-6Lg4Z-8RTg/exec;  // Reemplaza con la URL de tu Web App
+      axios.post(webAppUrl, data)
+        .then(res => alert('Datos enviados con éxito'))
+        .catch(err => alert('Error al enviar datos'));
+    }
+  </script>
+</body>
+</html>
